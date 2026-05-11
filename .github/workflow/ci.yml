@@ -1,0 +1,70 @@
+name: CI Workflow
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Validate Files
+        run: |
+          ls
+
+          test -f index.html
+          test -f style.css
+          test -f script.js
+
+          echo "All files exist"
+
+      - name: Send Email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+
+          subject: New Push Detected
+
+          to: sganeshkvnr@gmail.com
+          from: ${{ secrets.EMAIL_USERNAME }}
+
+          body: |
+            Developer pushed code.
+
+            Branch:
+            ${{ github.ref_name }}
+
+            User:
+            ${{ github.actor }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+          commit-message: automated pr
+
+          title: Auto PR - ${{ github.ref_name }}
+
+          body: |
+            CI checks passed successfully.
+
+          branch: auto-pr-${{ github.run_number }}
+
+          base: main
